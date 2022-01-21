@@ -24,7 +24,7 @@ var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
 
-var port = 9000;
+var port = 3000;
 
 app.get('/home', (req,res) => {
   res.send('Hello World, This is home router');
