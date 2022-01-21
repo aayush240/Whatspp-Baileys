@@ -26,6 +26,10 @@ app.use(bodyParser.json())
 
 var port = 9000;
 
+app.get('/home', (req,res) => {
+  res.send('Hello World, This is home router');
+});
+
 app.post('/create_group', async function(req, res) {
     console.log('body is ',req.body);
     const numbers = req.body.phone_numbers.split(",");
