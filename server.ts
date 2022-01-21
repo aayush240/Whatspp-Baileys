@@ -4,61 +4,49 @@ import {
   waChatKey,
   MessageType,
 } from "@adiwajshing/baileys";
-import * as fs from "fs";
-import express = require("express");
+import * as fs from 'fs'
 
-const app = express();
-app.use(express.json());
-const port = 8080;
-let data = {};
-app.post("/", async (req, res) => {
-  res.send("The sedulous hyena ate the antelope!");
-  data = req.body;
-  console.log(data);
-  await example();
-});
 
-app.listen(port, (err) => {
-  if (err) {
-    return console.error(err);
-  }
-  return console.log(`server is listening on ${port}`);
-});
 
-async function example() {
-  const conn = new WAConnection(); // instantiate
-  conn.autoReconnect = ReconnectMode.onConnectionLost; // only automatically reconnect when the connection breaks
-  // conn.logger.level = 'debug' // set to 'debug' to see what kind of stuff you can implement
-  // attempt to reconnect at most 10 times in a row
-  conn.connectOptions.maxRetries = 10;
-  conn.chatOrderingKey = waChatKey(true); // order chats such that pinned chats are on top
+//Making Connection
+const conn = new WAConnection(); // instantiate
+conn.autoReconnect = ReconnectMode.onConnectionLost; // only automatically reconnect when the connection breaks
+conn.connectOptions.maxRetries = 10;
+fs.existsSync("./auth_info.json") && conn.loadAuthInfo("./auth_info.json");
+conn.connect();
+const authInfo = conn.base64EncodedAuthInfo(); // get all the auth info we need to restore this session
+fs.writeFileSync("./auth_info.json", JSON.stringify(authInfo, null, "\t")); // save this info to a file
 
-  // loads the auth file credentials if present
-  /*  Note: one can take this auth_info.json file and login again from any computer without having to scan the QR code, 
-        and get full access to one's WhatsApp. Despite the convenience, be careful with this file */
-  fs.existsSync("./auth_info.json") && conn.loadAuthInfo("./auth_info.json");
-  // uncomment the following line to proxy the connection; some random proxy I got off of: https://proxyscrape.com/free-proxy-list
-  //conn.connectOptions.agent = ProxyAgent ('http://1.0.180.120:8080')
-  await conn.connect();
-  // credentials are updated on every connect
-  const authInfo = conn.base64EncodedAuthInfo(); // get all the auth info we need to restore this session
-  fs.writeFileSync("./auth_info.json", JSON.stringify(authInfo, null, "\t")); // save this info to a file
 
-  let content = "";
-  if (data && Object.keys(data).length !== 0 && data['records'].length > 0) {
-    content = `${data["worksheet"]}\n\n`;
-    for (let record of data["records"]) {
-      for (let key in record)
-        content += `${key}: ${record[key]}\n`;
-      content += "\n";
+var express = require('express');
+var bodyParser = require('body-parser');
+var app = express();
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json())
+
+var port = 9000;
+
+app.post('/create_group', async function(req, res) {
+    console.log('body is ',req.body);
+    const numbers = req.body.phone_numbers.split(",");
+    console.log(req.body.phone_numbers)
+    // Creating the group with first conatct
+    let first_num = numbers[0].toString();
+    // Creating Group
+    const group = await conn.groupCreate ("My Fab Group", [first_num+"@s.whatsapp.net"])
+    console.log ("created group with id: " + group.gid)
+    for (let i = 1; i < numbers.length; i++) {
+      let num = numbers[i].toString();
+      const add_people = await conn.groupAdd (group.gid, [num+"@s.whatsapp.net"])
+      console.log("ok")
     }
-    let type = MessageType.text;
-    const response = await conn.sendMessage(
-      "120363022777054460@g.us",
-      content,
-      type
-    );
-    console.log("sent message with ID '" + response.key.id + "' successfully");
-  }
-}
-example().catch((err) => console.log(`encountered error: ${err}`));
+    let response = {
+      creted : "yes",
+      group_id : group.gid
+    }
+    res.send(response);
+});
+
+// start the server
+app.listen(port);
+console.log('Server started! At http://localhost:' + port);
