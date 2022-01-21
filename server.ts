@@ -37,7 +37,7 @@ app.post('/create_group', async function(req, res) {
     // Creating the group with first conatct
     let first_num = numbers[0].toString();
     // Creating Group
-    const group = await conn.groupCreate ("My Fab Group", [first_num+"@s.whatsapp.net"])
+    const group = await conn.groupCreate (req.body.group_name, [first_num+"@s.whatsapp.net"])
     console.log ("created group with id: " + group.gid)
     for (let i = 1; i < numbers.length; i++) {
       let num = numbers[i].toString();
@@ -45,7 +45,7 @@ app.post('/create_group', async function(req, res) {
       console.log("ok")
     }
     let response = {
-      creted : "yes",
+      sucess : "Group created",
       group_id : group.gid
     }
     res.send(response);
